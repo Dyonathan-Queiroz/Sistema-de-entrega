@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 1. Definição do BASE_DIR (Caminho raiz do projeto)
+# 1. Definição do BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. Carregar variáveis do arquivo .env
@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'entregas',
 ]
 
-# 5. Middlewares padrão do Django
+# 5. Middlewares
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -39,11 +39,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-# 6. Configuração de Templates (HTML)
+# 6. Configuração de Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Pasta global de templates
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,22 +73,28 @@ DATABASES = {
     }
 }
 
-# 8. Modelo de Usuário Customizado (Essencial para o login funcionar)
+# 8. Modelo de Usuário Customizado
 AUTH_USER_MODEL = 'entregas.Usuario'
 
-# 9. Internacionalização (Idioma e Fuso Horário)
+# 9. Internacionalização
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
-# 10. Arquivos Estáticos (CSS, JS, AdminLTE)
+# 10. Arquivos Estáticos
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-# Local onde o Django guarda arquivos para o servidor de produção
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # 11. Configuração de campos de ID
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- O QUE ESTAVA FALTANDO ---
+# 12. Configurações de Redirecionamento de Login
+# Isso impede o erro 404 ao tentar acessar /accounts/login/
+LOGIN_URL = 'login'              # Nome da URL na sua entregas/urls.py
+LOGIN_REDIRECT_URL = 'dashboard' # Para onde vai após logar com sucesso
+LOGOUT_REDIRECT_URL = 'login'    # Para onde vai após clicar em sair

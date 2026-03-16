@@ -1,7 +1,8 @@
 from django.urls import path
 from . import views
 
-# O Django EXIGE que esta variável se chame exatamente 'urlpatterns' e seja uma lista
 urlpatterns = [
-    # path('', views.home, name='home'), # Exemplo de rota futura
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('', views.dashboard, name='dashboard'), # Página inicial após login
 ]
