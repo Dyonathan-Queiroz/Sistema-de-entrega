@@ -1,31 +1,23 @@
+#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
 import os
-from dotenv import load_dotenv
+import sys
 
-load_dotenv()
 
-# ... (outras configurações)
+def main():
+    """Run administrative tasks."""
+    # Aqui ele aponta para o seu arquivo de configurações que acabamos de ajustar
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG') == 'True'
 
-# 1. Adicione sua app na lista
-INSTALLED_APPS = [
-    # ... apps padrão do django
-    'entregas',
-]
-
-# 2. Configure o Banco de Dados
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
-    }
-}
-
-# 3. Configure os arquivos estáticos (AdminLTE)
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+if __name__ == '__main__':
+    main()
