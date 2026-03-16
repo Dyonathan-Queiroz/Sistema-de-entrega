@@ -1,0 +1,28 @@
+# Ambientes Virtuais (VITAL não subir para o Git)
+venv/
+env/
+ENV/
+.venv/
+
+# Configurações sensíveis (Suas senhas do MySQL e SECRET_KEY)
+.env
+
+# Arquivos temporários do Python (Compilados)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de Dados SQLite (se o Django criar um por padrão)
+*.sqlite3
+
+# Arquivos do VS Code e Sistema Operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Pasta de arquivos de mídia (uploads de usuários)
+media/
+
+# Pasta de estáticos coletados (para produção)
+staticfiles/
