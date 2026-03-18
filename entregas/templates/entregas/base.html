@@ -23,49 +23,69 @@
 
     <ul class="navbar-nav ml-auto">
       <li class="nav-item">
-        <a class="nav-link" href="{% url 'logout' %}" role="button">
-          <i class="fas fa-sign-out-alt"></i> Sair
+        <a class="nav-link text-danger font-weight-bold" href="{% url 'logout' %}" role="button">
+          <i class="fas fa-sign-out-alt mr-1"></i> Sair
         </a>
       </li>
     </ul>
   </nav>
 
   <aside class="main-sidebar sidebar-dark-danger elevation-4">
-    <a href="{% url 'dashboard' %}" class="brand-link">
+    <a href="{% url 'dashboard' %}" class="brand-link text-center">
       <span class="brand-text font-weight-light"><b>Sistema</b> Entregas</span>
     </a>
 
     <div class="sidebar">
       <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="info">
-          <a href="#" class="d-block">{{ user.username }} | <small>{{ user.get_perfil_display }}</small></a>
+        <div class="info w-100 text-center">
+          <a href="#" class="d-block">
+            <i class="fas fa-user-circle mr-2"></i>{{ user.username|upper }}
+            <br>
+            <span class="badge badge-danger mt-1">{{ user.get_perfil_display }}</span>
+          </a>
         </div>
       </div>
 
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          
           <li class="nav-item">
             <a href="{% url 'dashboard' %}" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>Dashboard</p>
             </a>
           </li>
+
+          {% if user.perfil == 'gestor' %}
+          <li class="nav-header text-uppercase">Administração</li>
           
-          {% if user.perfil == 'gestor' or user.perfil == 'operador' %}
-          <li class="nav-header">LOGÍSTICA</li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-truck"></i>
-              <p>Entregas</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{% url 'cadastro_veiculo' %}" class="nav-link">
-            <i class="nav-icon fas fa-car"></i>
-            <p>Frota de Veículos</p>
+            <a href="{% url 'gerenciar_filiais' %}" class="nav-link">
+              <i class="nav-icon fas fa-store text-primary"></i>
+              <p>Filiais</p>
             </a>
           </li>
           {% endif %}
+
+          {% if user.perfil == 'gestor' or user.perfil == 'operador' %}
+          <li class="nav-header text-uppercase">Logística</li>
+          
+          <li class="nav-item">
+            <a href="{% url 'cadastro_veiculo' %}" class="nav-link">
+              <i class="nav-icon fas fa-car text-danger"></i>
+              <p>Frota de Veículos</p>
+            </a>
+          </li>
+          {% endif %}
+
+          <li class="nav-header text-uppercase">Operacional</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link text-muted">
+              <i class="nav-icon fas fa-boxes"></i>
+              <p>Entregas (Em breve)</p>
+            </a>
+          </li>
+
         </ul>
       </nav>
     </div>
@@ -80,22 +100,36 @@
 
     <section class="content">
       <div class="container-fluid">
+        
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+              {{ message }}
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
         {% block content %}{% endblock %}
       </div>
     </section>
   </div>
 
   <footer class="main-footer">
-    <div class="float-right d-none d-sm-inline">
+    <div class="float-right d-none d-sm-inline text-muted">
       Informatics & Software
     </div>
-    <strong>Copyright &copy; 2026 <a href="#">Queiroz TI</a>.</strong> Todos os direitos reservados.
+    <strong>Copyright &copy; 2026 <a href="#" class="text-danger">Queiroz TI</a>.</strong>
   </footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
 {% block extra_js %}{% endblock %}
+
 </body>
 </html>

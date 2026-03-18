@@ -3,8 +3,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
-from .models import Entrega # Importe seus modelos conforme precisar
-from .forms import VeiculoForm
+from .models import Entrega, Veiculo, Filial, Usuario # Importe seus modelos conforme precisar
+from .forms import VeiculoForm, FilialForm
+
 
 
 def login_view(request):
@@ -139,3 +140,62 @@ def editar_veiculo(request, pk):
         form = VeiculoForm(instance=veiculo)
     
     return render(request, 'entregas/editar_veiculo.html', {'form': form, 'veiculo': veiculo})
+
+@login_required
+def gerenciar_filiais(request):
+    if request.user.perfil != 'gestor':
+        messages.error(request, "Acesso negado.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = FilialForm(request.POST) 
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Filial cadastrada com sucesso!")
+            return redirect('gerenciar_filiais')
+    else:
+        form = FilialForm() 
+    
+    # AJUSTE AQUI: Use 'filiais' no plural para combinar com o template
+    filiais = Filial.objects.all() 
+    
+    # AJUSTE AQUI TAMBÉM no dicionário
+    return render(request, 'entregas/gerenciar_filiais.html', {
+        'form': form, 
+        'filiais': filiais
+    })
+
+@login_required
+def excluir_filial(request, pk):
+    # 1. Proteção de perfil
+    if request.user.perfil != 'gestor':
+        messages.error(request, "Acesso negado.")
+        return redirect('dashboard')
+    
+    # 2. Busca a filial ou retorna 404 se não existir
+    filial = get_object_or_404(Filial, pk=pk)
+    
+    # 3. Deleta
+    filial.delete()
+    
+    # 4. Mensagem de feedback
+    messages.warning(request, f"A filial '{filial.nome}' foi removida com sucesso.")
+    
+    # 5. O RETORNO OBRIGATÓRIO (Deve estar fora de qualquer IF)
+    return redirect('gerenciar_filiais')
+    
+
+@login_required
+def editar_filial(request, pk):
+    filial = get_object_or_404(Filial, pk=pk)
+    
+    if request.method == 'POST':
+        form = FilialForm(request.POST, instance=filial)
+        if form.is_valid():
+            form.save()
+            messages.info(request, "Dados da filial atualizados.")
+        return redirect('gerenciar_filiais')
+    else:
+        form = FilialForm(instance=filial)
+        
+    return render(request, 'entregas/editar_filial.html', {'form': form, 'filial': filial})

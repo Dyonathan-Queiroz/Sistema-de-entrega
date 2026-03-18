@@ -1,0 +1,80 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card card-primary card-outline shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Nova Filial</h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Nome da Unidade</label>
+                            {{ form.nome }}
+                        </div>
+                        <div class="form-group">
+                            <label>Cidade</label>
+                            {{ form.cidade }}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary btn-block font-weight-bold">
+                            <i class="fas fa-save mr-1"></i> Salvar Filial
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card card-dark shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list mr-2"></i>Filiais Ativas</h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover text-nowrap">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Cidade</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for f in filiais %}
+                            <tr>
+                                <td>{{ f.id }}</td>
+                                <td><strong>{{ f.nome }}</strong></td>
+                                <td>{{ f.cidade }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'editar_filial' f.id %}" class="btn btn-sm btn-info mr-1" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'excluir_filial' f.id %}" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Excluir"
+                                       onclick="return confirm('Tem certeza que deseja remover a filial {{ f.nome }}?');">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle mr-1"></i> Nenhuma filial cadastrada no sistema.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

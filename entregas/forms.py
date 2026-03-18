@@ -1,5 +1,5 @@
 from django import forms
-from .models import Veiculo, Usuario
+from .models import Veiculo, Usuario, Filial
 
 class VeiculoForm(forms.ModelForm):
     TIPO_CHOICES = (
@@ -32,3 +32,12 @@ class VeiculoForm(forms.ModelForm):
         def clean_placa(self):
             placa = self.cleaned_data.get('placa')
             return placa.upper() # Salva sempre como ABC-1234
+
+class FilialForm(forms.ModelForm):
+    class Meta:
+        model = Filial
+        fields = ['nome', 'cidade']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Matriz Centro'}),
+            'cidade': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: São Paulo'}),
+        }
