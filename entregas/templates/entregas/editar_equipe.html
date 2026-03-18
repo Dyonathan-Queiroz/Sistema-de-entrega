@@ -1,0 +1,40 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card card-info card-outline shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Editar Membro: {{ membro.username }}</h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-info">Salvar Alterações</button>
+                        <a href="{% url 'gerenciar_equipe' %}" class="btn btn-default float-right">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Reaproveitando a lógica de esconder o veículo
+    const perfilSelect = document.querySelector('select[name="perfil"]');
+    const veiculoField = document.querySelector('select[name="veiculo"]').parentElement;
+
+    function toggleVeiculo() {
+        veiculoField.style.display = perfilSelect.value === 'entregador' ? 'block' : 'none';
+    }
+
+    perfilSelect.addEventListener('change', toggleVeiculo);
+    toggleVeiculo();
+</script>
+{% endblock %}

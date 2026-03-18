@@ -21,7 +21,8 @@ class Usuario(AbstractUser):
     )
     perfil = models.CharField(max_length=20, choices=PERFIL_CHOICES, default='gestor')
     filial = models.ForeignKey(Filial, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios')
-
+    veiculo = models.ForeignKey('Veiculo', on_delete=models.SET_NULL, null=True, blank=True)
+    
     def __str__(self):
         return f"{self.username} ({self.get_perfil_display()})"
 

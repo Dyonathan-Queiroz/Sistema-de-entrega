@@ -1,0 +1,144 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card card-danger card-outline shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user-plus mr-2"></i>Novo Membro</h3>
+                </div>
+                <form method="post" id="formUsuario">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Nome de Usuário</label>
+                            {{ form.username }}
+                        </div>
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="form-group">
+                            <label>Senha</label>
+                            {{ form.password }}
+                        </div>
+                        <div class="form-group">
+                            <label>Perfil de Acesso</label>
+                            {{ form.perfil }}
+                        </div>
+                        <div class="form-group">
+                            <label>Filial Vinculada</label>
+                            {{ form.filial }}
+                        </div>
+                        
+                        <div class="form-group" id="div_veiculo">
+                            <label>Veículo (Apenas Entregadores)</label>
+                            {{ form.veiculo }}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-danger btn-block font-weight-bold">
+                            <i class="fas fa-check mr-1"></i> Cadastrar na Equipe
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card card-dark shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-users mr-2"></i>Equipe Cadastrada</h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Perfil</th>
+                                <th>Filial</th>
+                                <th>Veículo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for membro in equipe %}
+                            <tr>
+                                <td>
+                                    <strong>{{ membro.username|upper }}</strong><br>
+                                    <small class="text-muted">{{ membro.email }}</small>
+                                </td>
+                                <td>
+                                    {% if membro.perfil == 'gestor' %}
+                                        <span class="badge badge-danger">GESTOR</span>
+                                    {% elif membro.perfil == 'operador' %}
+                                        <span class="badge badge-warning">OPERADOR</span>
+                                    {% else %}
+                                        <span class="badge badge-success">ENTREGADOR</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ membro.filial.nome|default:"---" }}</td>
+                                <td>
+                                    {% if membro.veiculo %}
+                                        <span class="text-primary"><i class="fas fa-truck mr-1"></i>{{ membro.veiculo.placa }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">Nenhum</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'editar_equipe' membro.id %}" class="btn btn-sm btn-info" title="Editar">
+                                        <i class="fas fa-user-edit"></i>
+                                    </a>
+                                    
+                                    {% if membro.id != user.id %}
+                                    <a href="{% url 'excluir_equipe' membro.id %}" 
+                                    class="btn btn-sm btn-danger" 
+                                    title="Excluir"
+                                    onclick="return confirm('Tem certeza que deseja remover o usuário {{ membro.username }}?');">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-secondary disabled" title="Você não pode se excluir">
+                                        <i class="fas fa-lock"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Nenhum membro cadastrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const perfilSelect = document.getElementById('id_perfil');
+        const divVeiculo = document.getElementById('div_veiculo');
+
+        function atualizarVisibilidadeVeiculo() {
+            // Se o valor selecionado for 'entregador', mostra a div, senão esconde
+            if (perfilSelect.value === 'entregador') {
+                divVeiculo.style.display = 'block';
+            } else {
+                divVeiculo.style.display = 'none';
+            }
+        }
+
+        // Escuta mudanças no select de perfil
+        perfilSelect.addEventListener('change', atualizarVisibilidadeVeiculo);
+
+        // Executa uma vez ao carregar a página (caso venha com erro de form)
+        atualizarVisibilidadeVeiculo();
+    });
+</script>
+{% endblock %}

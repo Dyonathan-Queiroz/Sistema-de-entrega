@@ -11,4 +11,7 @@ urlpatterns = [
     path('filiais/', views.gerenciar_filiais, name='gerenciar_filiais'), # Cadastrar filial
     path('filiais/excluir/<int:pk>/', views.excluir_filial, name='excluir_filial'), # Excluir filial
     path('filiais/editar/<int:pk>/', views.editar_filial, name='editar_filial'), # Editar Filial
+    path('equipe/', views.gerenciar_equipe, name='gerenciar_equipe'), # Cadastrar usuarios
+    path('equipe/editar/<int:pk>/', views.editar_equipe, name='editar_equipe'), # Editar usuarios
+path('equipe/excluir/<int:pk>/', views.excluir_equipe, name='excluir_equipe'), # Excluir usuarios
 ]

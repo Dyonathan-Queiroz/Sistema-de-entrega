@@ -41,3 +41,25 @@ class FilialForm(forms.ModelForm):
             'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Matriz Centro'}),
             'cidade': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: São Paulo'}),
         }
+
+class UsuarioForm(forms.ModelForm):
+    # Definimos a senha como um campo de password para não aparecer o texto
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = Usuario
+        fields = ['username', 'email', 'password', 'perfil', 'filial', 'veiculo']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'perfil': forms.Select(attrs={'class': 'form-control'}),
+            'filial': forms.Select(attrs={'class': 'form-control'}),
+            'veiculo': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password"]) # Criptografa a senha
+        if commit:
+            user.save()
+        return user

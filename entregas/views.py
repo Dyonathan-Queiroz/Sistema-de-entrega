@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from .models import Entrega, Veiculo, Filial, Usuario # Importe seus modelos conforme precisar
-from .forms import VeiculoForm, FilialForm
+from .forms import VeiculoForm, FilialForm, UsuarioForm
 
 
 
@@ -199,3 +199,59 @@ def editar_filial(request, pk):
         form = FilialForm(instance=filial)
         
     return render(request, 'entregas/editar_filial.html', {'form': form, 'filial': filial})
+
+@login_required
+def gerenciar_equipe(request):
+    if request.user.perfil != 'gestor':
+        messages.error(request, "Acesso negado.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = UsuarioForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Novo membro da equipe cadastrado!")
+            return redirect('gerenciar_equipe')
+    else:
+        form = UsuarioForm()
+
+    equipe = Usuario.objects.all().select_related('filial', 'veiculo')
+    return render(request, 'entregas/gerenciar_equipe.html', {
+        'form': form,
+        'equipe': equipe
+    })
+
+@login_required
+def editar_equipe(request, pk):
+    if request.user.perfil != 'gestor':
+        return redirect('dashboard')
+    
+    membro = get_object_or_404(Usuario, pk=pk)
+    
+    if request.method == 'POST':
+        # Passamos a instância do usuário para o formulário
+        form = UsuarioForm(request.POST, instance=membro)
+        if form.is_valid():
+            form.save()
+            messages.info(request, f"Cadastro de {membro.username} atualizado.")
+            return redirect('gerenciar_equipe')
+    else:
+        form = UsuarioForm(instance=membro)
+    
+    return render(request, 'entregas/editar_equipe.html', {'form': form, 'membro': membro})
+
+@login_required
+def excluir_equipe(request, pk):
+    if request.user.perfil != 'gestor':
+        return redirect('dashboard')
+    
+    membro = get_object_or_404(Usuario, pk=pk)
+    
+    # Evitar que o gestor se exclua por acidente
+    if membro == request.user:
+        messages.error(request, "Você não pode excluir seu próprio usuário!")
+        return redirect('gerenciar_equipe')
+        
+    membro.delete()
+    messages.warning(request, "Usuário removido da equipe.")
+    return redirect('gerenciar_equipe')
