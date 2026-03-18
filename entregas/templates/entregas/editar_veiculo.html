@@ -1,0 +1,35 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Editando Veículo: <strong>{{ veiculo.placa }}</strong></h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group"><label>Placa</label>{{ form.placa }}</div>
+                                <div class="form-group"><label>Modelo</label>{{ form.modelo }}</div>
+                                <div class="form-group"><label>Tipo</label>{{ form.tipo }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group"><label>Status</label>{{ form.status }}</div>
+                                <div class="form-group"><label>Motorista</label>{{ form.motorista }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-right">
+                        <a href="{% url 'cadastro_veiculo' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

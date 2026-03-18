@@ -1,0 +1,151 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas {% if message.tags == 'success' %}fa-check{% else %}fa-ban{% endif %}"></i> Notificação</h5>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <h5><i class="icon fas fa-exclamation-triangle"></i> Atenção aos erros:</h5>
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-car mr-2"></i>Dados do Veículo</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group"><label>Placa</label>{{ form.placa }}</div>
+                        <div class="form-group"><label>Modelo</label>{{ form.modelo }}</div>
+                        <div class="form-group"><label>Tipo de Veículo</label>{{ form.tipo }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-user-check mr-2"></i>Vínculo e Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group"><label>Status Atual</label>{{ form.status }}</div>
+                        <div class="form-group"><label>Motorista Responsável</label>{{ form.motorista }}</div>
+                        <p class="text-muted small"><i class="fas fa-info-circle mr-1"></i> Deixe o motorista em branco para cadastrar como disponível.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 text-center">
+            <button type="submit" class="btn btn-success btn-lg px-5">
+                <i class="fas fa-save mr-2"></i>Salvar Veículo na Frota
+            </button>
+        </div>
+    </form>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-outline card-dark">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list mr-2"></i>Frota Cadastrada</h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>Placa</th>
+                                <th>Modelo</th>
+                                <th class="text-center">Tipo</th>
+                                <th>Motorista</th>
+                                <th>Situação</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in veiculos %}
+                            <tr>
+                                <td><strong>{{ v.placa }}</strong></td>
+                                <td>{{ v.modelo }}</td>
+                                
+                                <td class="text-center">
+                                    {% if v.tipo == 'carro' %}
+                                        <i class="fas fa-car text-primary" title="Carro" style="font-size: 1.5rem;"></i>
+                                    {% elif v.tipo == 'moto' %}
+                                        <i class="fas fa-motorcycle text-warning" title="Moto" style="font-size: 1.5rem;"></i>
+                                    {% elif v.tipo == 'caminhao' %}
+                                        <i class="fas fa-truck text-danger" title="Caminhão" style="font-size: 1.5rem;"></i>
+                                    {% else %}
+                                        <i class="fas fa-question-circle text-muted" title="Outro" style="font-size: 1.5rem;"></i>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">{{ v.get_tipo_display }}</small>
+                                </td>
+
+                                <td>
+                                    {% if v.motorista %}
+                                        <i class="fas fa-user-tag mr-1 text-secondary"></i>{{ v.motorista.username }}
+                                    {% else %}
+                                        <span class="text-muted small italic">Disponível</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if v.status == 'disponivel' %}
+                                        <span class="badge badge-success">{{ v.get_status_display }}</span>
+                                    {% elif v.status == 'em_rota' %}
+                                        <span class="badge badge-primary">{{ v.get_status_display }}</span>
+                                    {% elif v.status == 'manutencao' %}
+                                        <span class="badge badge-danger">{{ v.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ v.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="btn-group">
+                                        <a href="{% url 'editar_veiculo' v.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        <a href="{% url 'excluir_veiculo' v.pk %}" 
+                                        class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('Deseja realmente excluir o veículo {{ v.placa }}?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Nenhum veículo cadastrado na base de dados.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

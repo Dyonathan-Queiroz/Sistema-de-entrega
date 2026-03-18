@@ -2,7 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 from .models import Entrega # Importe seus modelos conforme precisar
+from .forms import VeiculoForm
+
 
 def login_view(request):
     # Se o usuário já estiver logado, manda direto para o dashboard
@@ -90,3 +93,49 @@ def dashboard(request):
         return render(request, 'entregas/dashboard_entregador.html', context)
     
     return render(request, 'entregas/dashboard_operador.html', context)
+
+@login_required
+def cadastro_veiculo(request):
+    if request.method == 'POST':
+        form = VeiculoForm(request.POST)
+        if form.is_valid():
+            veiculo = form.save(commit=False)
+            if not veiculo.filial and hasattr(request.user, 'filial'):
+                veiculo.filial = request.user.filial
+            veiculo.save()
+            messages.success(request, f"Veículo {veiculo.placa} cadastrado!")
+            return redirect('cadastro_veiculo') # Recarrega a página para limpar o form
+    else:
+        form = VeiculoForm()
+    
+    # Buscamos todos os veículos para a tabela
+    veiculos = Veiculo.objects.all().order_by('-id')
+    
+    return render(request, 'entregas/cadastro_veiculo.html', {
+        'form': form,
+        'veiculos': veiculos
+    })
+
+@login_required
+def excluir_veiculo(request, pk):
+    veiculo = get_object_or_404(Veiculo, pk=pk)
+    placa = veiculo.placa
+    veiculo.delete()
+    messages.warning(request, f"Veículo {placa} removido com sucesso!")
+    return redirect('cadastro_veiculo')
+
+@login_required
+def editar_veiculo(request, pk):
+    veiculo = get_object_or_404(Veiculo, pk=pk)
+    
+    if request.method == 'POST':
+        # Aqui o 'instance=veiculo' faz o Django entender que é um UPDATE, não um novo INSERT
+        form = VeiculoForm(request.POST, instance=veiculo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Veículo {veiculo.placa} atualizado com sucesso!")
+            return redirect('cadastro_veiculo')
+    else:
+        form = VeiculoForm(instance=veiculo)
+    
+    return render(request, 'entregas/editar_veiculo.html', {'form': form, 'veiculo': veiculo})

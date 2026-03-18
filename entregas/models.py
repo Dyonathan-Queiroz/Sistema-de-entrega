@@ -36,8 +36,19 @@ class Veiculo(models.Model):
     placa = models.CharField(max_length=10, unique=True)
     tipo = models.CharField(max_length=20, help_text="Ex: Carro, Moto, Caminhão")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='disponivel')
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, related_name='veiculos')
-    motorista_atual = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'perfil': 'entregador'})
+    
+    # Permitir null e blank resolve o IntegrityError (1048)
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Alterado para 'motorista' para alinhar com o forms.py e views.py
+    motorista = models.ForeignKey(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        limit_choices_to={'perfil': 'entregador'},
+        related_name='veiculos'
+    )
 
     def __str__(self):
         return f"{self.modelo} - {self.placa}"
