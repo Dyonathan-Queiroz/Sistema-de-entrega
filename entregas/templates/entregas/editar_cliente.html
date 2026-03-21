@@ -1,0 +1,79 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-info shadow">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-edit mr-2"></i> Editar Cliente: {{ cliente.nome }}
+                    </h3>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label>Nome Completo:</label>
+                                {{ form.nome }}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>CPF/CNPJ:</label>
+                                {{ form.documento }}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>WhatsApp/Telefone:</label>
+                                {{ form.telefone }}
+                            </div>
+                        </div>
+
+                        <div class="bg-light p-3 rounded mb-3 border">
+                            <h6 class="text-info font-weight-bold border-bottom pb-2">
+                                <i class="fas fa-map-marker-alt"></i> Endereço de Entrega
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-9 form-group">
+                                    <label>Logradouro/Rua:</label>
+                                    {{ form.rua }}
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Número:</label>
+                                    {{ form.numero }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Bairro:</label>
+                                    {{ form.bairro }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Cidade:</label>
+                                    {{ form.cidade }}
+                                </div>
+                                <div class="col-md-12 form-group">
+                                    <label>Ponto de Referência:</label>
+                                    {{ form.ponto_referencia }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observações Fixas:</label>
+                            {{ form.observacoes_fixas }}
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{% url 'painel_operador' %}" class="btn btn-default">
+                            <i class="fas fa-arrow-left mr-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-check-circle mr-1"></i> Atualizar Dados
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

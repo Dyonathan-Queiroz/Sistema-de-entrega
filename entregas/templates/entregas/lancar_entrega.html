@@ -1,0 +1,71 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card card-outline card-success shadow">
+                    <div class="card-header">
+                        <h3 class="card-title">Lançando Entrega para: <strong>{{ cliente.nome }}</strong></h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="bg-light p-3 rounded mb-3 border">
+                            <h6 class="text-success border-bottom pb-2 font-weight-bold">
+                                <i class="fas fa-map-marked-alt"></i> Confirmar Endereço de Entrega
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-9 form-group">
+                                    <label>Rua:</label>
+                                    {{ form.rua }}
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Nº:</label>
+                                    {{ form.numero }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Bairro:</label>
+                                    {{ form.bairro }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Ponto de Referência:</label>
+                                    {{ form.ponto_referencia }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label>Observações para esta entrega:</label>
+                                {{ form.observacao_entrega }}
+                            </div>
+                            
+                            <div class="col-md-12 mt-3">
+                                <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                                    <input type="checkbox" 
+                                           name="eh_perecivel" 
+                                           class="custom-control-input" 
+                                           id="id_eh_perecivel" 
+                                           {% if form.eh_perecivel.value %}checked{% endif %}>
+                                    <label class="custom-control-label ml-2 font-weight-bold text-danger" for="id_eh_perecivel">
+                                        Possui produtos perecíveis?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{% url 'painel_operador' %}" class="btn btn-default">Voltar</a>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-check-circle mr-1"></i> Finalizar Lançamento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

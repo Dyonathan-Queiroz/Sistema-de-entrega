@@ -1,257 +1,315 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-from .models import Entrega, Veiculo, Filial, Usuario # Importe seus modelos conforme precisar
-from .forms import VeiculoForm, FilialForm, UsuarioForm
+from django.db.models import Q
+from .models import Entrega, Veiculo, Filial, Usuario, Cliente
+from .forms import VeiculoForm, FilialForm, UsuarioForm, ClienteForm, LancarEntregaForm
 
-
+# --- 1. AUTENTICAÇÃO E LOGIN ---
 
 def login_view(request):
-    # Se o usuário já estiver logado, manda direto para o dashboard
     if request.user.is_authenticated:
         return redirect('dashboard')
-
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-
     if request.method == 'POST':
         usuario_post = request.POST.get('username')
         senha_post = request.POST.get('password')
-
         user = authenticate(request, username=usuario_post, password=senha_post)
-
         if user is not None:
             login(request, user)
             messages.success(request, f"Bem-vindo, {user.username}!")
             return redirect('dashboard')
         else:
             messages.error(request, "Usuário ou senha inválidos.")
-            return render(request, 'entregas/login.html')
-
     return render(request, 'entregas/login.html')
-
-@login_required
-def dashboard(request):
-    """
-    View principal que direciona o usuário baseada no perfil
-    """
-    user = request.user
-    
-    # Exemplo de lógica de contexto por perfil
-    context = {
-        'perfil': user.perfil,
-        'nome_usuario': user.get_full_name() or user.username,
-    }
-
-    # Redirecionamento ou renderização baseada no perfil do seu models.py
-    if user.perfil == 'gestor':
-        # Aqui você pode buscar dados específicos para o gestor
-        return render(request, 'entregas/dashboard_gestor.html', context)
-    
-    elif user.perfil == 'entregador':
-        # Busca apenas as entregas do próprio entregador
-        context['minhas_entregas'] = Entrega.objects.filter(entregador=user, status='em_rota')
-        return render(request, 'entregas/dashboard_entregador.html', context)
-    
-    # Caso seja operador ou outro
-    return render(request, 'entregas/dashboard_operador.html', context)
 
 def logout_view(request):
     logout(request)
     messages.info(request, "Você saiu do sistema.")
     return redirect('login')
 
-    from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Entrega, Veiculo, Cliente
+# --- 2. DASHBOARD (O MAESTRO) ---
 
 @login_required
 def dashboard(request):
     user = request.user
     
-    # Buscando dados reais do banco para os Cards
-    total_entregas = Entrega.objects.count()
-    entregas_pendentes = Entrega.objects.filter(status='pendente').count()
-    veiculos_disponiveis = Veiculo.objects.filter(status='disponivel').count()
-    total_clientes = Cliente.objects.count()
+    # REDIRECIONAMENTO AUTOMÁTICO POR PERFIL
+    # Se for operador, mandamos direto para a função que você testou e funcionou
+    if user.perfil == 'operador':
+        return redirect('painel_operador')
+    
+    # Se for entregador, mandamos para a view dele (se você tiver uma específica)
+    # Caso contrário, ele segue para o render abaixo
+    if user.perfil == 'entregador':
+        # return redirect('painel_entregador') # Se existir essa rota
+        pass
 
+    # Lógica para GESTOR (ou caso o redirecionamento falhe)
+    clientes = Cliente.objects.all().order_by('-id')
+    
     context = {
         'perfil': user.perfil,
         'nome_usuario': user.get_full_name() or user.username,
-        # Passando os números para o HTML
-        'total_entregas': total_entregas,
-        'entregas_pendentes': entregas_pendentes,
-        'veiculos_disponiveis': veiculos_disponiveis,
-        'total_clientes': total_clientes,
+        'total_entregas': Entrega.objects.count(),
+        'entregas_pendentes': Entrega.objects.filter(status='pendente').count(),
+        'veiculos_disponiveis': Veiculo.objects.filter(status='disponivel').count(),
+        'total_clientes': Cliente.objects.count(),
+        'form_cliente': ClienteForm(),
+        'clientes': clientes,
     }
 
     if user.perfil == 'gestor':
         return render(request, 'entregas/dashboard_gestor.html', context)
+    
     elif user.perfil == 'entregador':
         context['minhas_entregas'] = Entrega.objects.filter(entregador=user, status='em_rota')
         return render(request, 'entregas/dashboard_entregador.html', context)
     
-    return render(request, 'entregas/dashboard_operador.html', context)
+    # Fallback: Se algo der errado, mostra o painel do operador
+    return redirect('painel_operador')
+
+# --- 3. PAINEL DO OPERADOR E CLIENTES (CRUD) ---
 
 @login_required
-def cadastro_veiculo(request):
-    if request.method == 'POST':
-        form = VeiculoForm(request.POST)
-        if form.is_valid():
-            veiculo = form.save(commit=False)
-            if not veiculo.filial and hasattr(request.user, 'filial'):
-                veiculo.filial = request.user.filial
-            veiculo.save()
-            messages.success(request, f"Veículo {veiculo.placa} cadastrado!")
-            return redirect('cadastro_veiculo') # Recarrega a página para limpar o form
+def painel_operador(request):
+    # 1. Verificação de Perfil
+    if request.user.perfil not in ['operador', 'gestor']:
+        messages.error(request, "Acesso negado.")
+        return redirect('dashboard')
+    
+    # Pega o termo digitado na busca #
+    query = request.GET.get('q')
+    
+    if query:
+        # Filtra por nome ou documento (CPF/CNPJ)
+        clientes = Cliente.objects.filter(
+            Q(nome__icontains=query) | Q(documento__icontains=query)
+        ).order_by('-id')
     else:
-        form = VeiculoForm()
+        clientes = Cliente.objects.all().order_by('-id')
     
-    # Buscamos todos os veículos para a tabela
-    veiculos = Veiculo.objects.all().order_by('-id')
+    # Lógica de salvamento continua igual...
+    if request.method == 'POST':
+        form_cliente = ClienteForm(request.POST)
+        if form_cliente.is_valid():
+            form_cliente.save()
+            messages.success(request, "Cliente cadastrado com sucesso!")
+            return redirect('painel_operador')
+        else:
+            form_cliente = ClienteForm(request.POST)
+    else:
+        form_cliente = ClienteForm()
+
+    return render(request, 'entregas/dashboard_operador.html', {
+        'clientes': clientes, 
+        'form_cliente': form_cliente,
+        'query': query # Passamos de volta para o HTML para manter o texto na caixa
+    })
+
+    # 2. Busca de dados
+    clientes = Cliente.objects.all().order_by('-id')
     
-    return render(request, 'entregas/cadastro_veiculo.html', {
-        'form': form,
-        'veiculos': veiculos
+    
+    # 3. Lógica de Salvamento (POST)
+    if request.method == 'POST':
+        form_cliente = ClienteForm(request.POST)
+        if form_cliente.is_valid():
+            form_cliente.save()
+            messages.success(request, "Cliente cadastrado com sucesso!")
+            return redirect('painel_operador')
+        else:
+            # Se houver erro, NÃO damos redirect. 
+            # Renderizamos a página novamente para mostrar os erros nos campos.
+            messages.error(request, "Erro ao cadastrar cliente. Verifique os campos em vermelho.")
+    else:
+        # Método GET: Formulário vazio
+        form_cliente = ClienteForm()
+
+    return render(request, 'entregas/dashboard_operador.html', {
+        'clientes': clientes, 
+        'form_cliente': form_cliente
     })
 
 @login_required
-def excluir_veiculo(request, pk):
-    veiculo = get_object_or_404(Veiculo, pk=pk)
-    placa = veiculo.placa
-    veiculo.delete()
-    messages.warning(request, f"Veículo {placa} removido com sucesso!")
-    return redirect('cadastro_veiculo')
+def editar_cliente(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
+        if form.is_valid():
+            form.save()
+            messages.info(request, "Cliente atualizado com sucesso.")
+            return redirect('painel_operador')
+        else:
+            messages.error(request, "Erro ao atualizar. Verifique os dados.")
+    else:
+        form = ClienteForm(instance=cliente)
+        
+    return render(request, 'entregas/editar_cliente.html', {
+        'form': form, 
+        'cliente': cliente
+    })
+
+@login_required
+def excluir_cliente(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    cliente.delete()
+    messages.warning(request, "Cliente removido do sistema.")
+    return redirect('painel_operador')
+
+# --- 4. GESTÃO DE VEÍCULOS ---
+
+@login_required
+def cadastro_veiculo(request):
+    if request.user.perfil != 'gestor':
+        return redirect('dashboard')
+    if request.method == 'POST':
+        form = VeiculoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Veículo cadastrado!")
+            return redirect('cadastro_veiculo')
+    else:
+        form = VeiculoForm()
+    veiculos = Veiculo.objects.all()
+    return render(request, 'entregas/cadastro_veiculo.html', {'form': form, 'veiculos': veiculos})
 
 @login_required
 def editar_veiculo(request, pk):
     veiculo = get_object_or_404(Veiculo, pk=pk)
-    
     if request.method == 'POST':
-        # Aqui o 'instance=veiculo' faz o Django entender que é um UPDATE, não um novo INSERT
         form = VeiculoForm(request.POST, instance=veiculo)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Veículo {veiculo.placa} atualizado com sucesso!")
             return redirect('cadastro_veiculo')
     else:
         form = VeiculoForm(instance=veiculo)
-    
-    return render(request, 'entregas/editar_veiculo.html', {'form': form, 'veiculo': veiculo})
+    return render(request, 'entregas/editar_veiculo.html', {'form': form})
+
+@login_required
+def excluir_veiculo(request, pk):
+    veiculo = get_object_or_404(Veiculo, pk=pk)
+    veiculo.delete()
+    return redirect('cadastro_veiculo')
+
+# --- 5. GESTÃO DE FILIAIS ---
 
 @login_required
 def gerenciar_filiais(request):
     if request.user.perfil != 'gestor':
-        messages.error(request, "Acesso negado.")
         return redirect('dashboard')
-
+    filiais = Filial.objects.all()
     if request.method == 'POST':
-        form = FilialForm(request.POST) 
+        form = FilialForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Filial cadastrada com sucesso!")
             return redirect('gerenciar_filiais')
     else:
-        form = FilialForm() 
-    
-    # AJUSTE AQUI: Use 'filiais' no plural para combinar com o template
-    filiais = Filial.objects.all() 
-    
-    # AJUSTE AQUI TAMBÉM no dicionário
-    return render(request, 'entregas/gerenciar_filiais.html', {
-        'form': form, 
-        'filiais': filiais
-    })
-
-@login_required
-def excluir_filial(request, pk):
-    # 1. Proteção de perfil
-    if request.user.perfil != 'gestor':
-        messages.error(request, "Acesso negado.")
-        return redirect('dashboard')
-    
-    # 2. Busca a filial ou retorna 404 se não existir
-    filial = get_object_or_404(Filial, pk=pk)
-    
-    # 3. Deleta
-    filial.delete()
-    
-    # 4. Mensagem de feedback
-    messages.warning(request, f"A filial '{filial.nome}' foi removida com sucesso.")
-    
-    # 5. O RETORNO OBRIGATÓRIO (Deve estar fora de qualquer IF)
-    return redirect('gerenciar_filiais')
-    
+        form = FilialForm()
+    return render(request, 'entregas/gerenciar_filiais.html', {'filiais': filiais, 'form': form})
 
 @login_required
 def editar_filial(request, pk):
     filial = get_object_or_404(Filial, pk=pk)
-    
     if request.method == 'POST':
         form = FilialForm(request.POST, instance=filial)
         if form.is_valid():
             form.save()
-            messages.info(request, "Dados da filial atualizados.")
-        return redirect('gerenciar_filiais')
+            return redirect('gerenciar_filiais')
     else:
         form = FilialForm(instance=filial)
-        
-    return render(request, 'entregas/editar_filial.html', {'form': form, 'filial': filial})
+    return render(request, 'entregas/editar_filial.html', {'form': form})
+
+@login_required
+def excluir_filial(request, pk):
+    filial = get_object_or_404(Filial, pk=pk)
+    filial.delete()
+    return redirect('gerenciar_filiais')
+
+# --- 6. GESTÃO DE EQUIPE ---
 
 @login_required
 def gerenciar_equipe(request):
     if request.user.perfil != 'gestor':
-        messages.error(request, "Acesso negado.")
         return redirect('dashboard')
-
+    usuarios = Usuario.objects.all()
     if request.method == 'POST':
         form = UsuarioForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Novo membro da equipe cadastrado!")
             return redirect('gerenciar_equipe')
     else:
         form = UsuarioForm()
-
-    equipe = Usuario.objects.all().select_related('filial', 'veiculo')
-    return render(request, 'entregas/gerenciar_equipe.html', {
-        'form': form,
-        'equipe': equipe
-    })
+    return render(request, 'entregas/gerenciar_equipe.html', {'equipe': usuarios, 'form': form})
 
 @login_required
 def editar_equipe(request, pk):
-    if request.user.perfil != 'gestor':
-        return redirect('dashboard')
-    
-    membro = get_object_or_404(Usuario, pk=pk)
-    
+    usuario = get_object_or_404(Usuario, pk=pk)
     if request.method == 'POST':
-        # Passamos a instância do usuário para o formulário
-        form = UsuarioForm(request.POST, instance=membro)
+        form = UsuarioForm(request.POST, instance=usuario)
         if form.is_valid():
             form.save()
-            messages.info(request, f"Cadastro de {membro.username} atualizado.")
             return redirect('gerenciar_equipe')
     else:
-        form = UsuarioForm(instance=membro)
-    
-    return render(request, 'entregas/editar_equipe.html', {'form': form, 'membro': membro})
+        form = UsuarioForm(instance=usuario)
+    return render(request, 'entregas/editar_equipe.html', {'form': form})
 
 @login_required
 def excluir_equipe(request, pk):
-    if request.user.perfil != 'gestor':
-        return redirect('dashboard')
-    
-    membro = get_object_or_404(Usuario, pk=pk)
-    
-    # Evitar que o gestor se exclua por acidente
-    if membro == request.user:
-        messages.error(request, "Você não pode excluir seu próprio usuário!")
-        return redirect('gerenciar_equipe')
-        
-    membro.delete()
-    messages.warning(request, "Usuário removido da equipe.")
+    usuario = get_object_or_404(Usuario, pk=pk)
+    usuario.delete()
     return redirect('gerenciar_equipe')
+
+# --- 7. LANÇAMENTO DE ENTREGAS ---
+
+@login_required
+def criar_entrega_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+
+    if request.method == "POST":
+        form = LancarEntregaForm(request.POST)
+        if form.is_valid():
+            try:
+                entrega = form.save(commit=False)
+                
+                # Preenchimento automático
+                entrega.cliente = cliente
+                entrega.operador = request.user
+                entrega.status = 'pendente'
+                entrega.valor = 0
+                
+                # RESOLUÇÃO DO ERRO DO ATRIBUTO:
+                # Primeiro, tentamos pegar a primeira filial do banco para não dar erro
+                from .models import Filial
+                filial_padrao = Filial.objects.first()
+                
+                if filial_padrao:
+                    entrega.filial_origem = filial_padrao
+                else:
+                    # Se nem a filial padrão existir, avisamos o erro
+                    messages.error(request, "Erro: Nenhuma filial cadastrada no sistema.")
+                    return render(request, 'entregas/lancar_entrega.html', {'form': form, 'cliente': cliente})
+                
+                entrega.save() # Agora vai!
+                
+                messages.success(request, f"Entrega para {cliente.nome} postada!")
+                return redirect('painel_operador')
+                
+            except Exception as e:
+                print(f"ERRO AO SALVAR NO BANCO: {e}")
+                messages.error(request, f"Erro técnico ao salvar: {e}")
+    else:
+        dados_iniciais = {
+            'rua': cliente.rua,
+            'numero': cliente.numero,
+            'bairro': cliente.bairro,
+            'ponto_referencia': cliente.ponto_referencia,
+            'observacao_entrega': cliente.observacoes_fixas,
+        }
+        form = LancarEntregaForm(initial=dados_iniciais)
+
+    return render(request, 'entregas/lancar_entrega.html', {
+        'form': form,
+        'cliente': cliente
+    })

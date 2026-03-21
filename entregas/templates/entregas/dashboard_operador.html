@@ -1,0 +1,148 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card card-primary card-outline shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user-plus mr-2"></i>Novo Cliente</h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                {{ form_cliente.nome.label_tag }}
+                                {{ form_cliente.nome }}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                {{ form_cliente.documento.label_tag }}
+                                {{ form_cliente.documento }}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                {{ form_cliente.telefone.label_tag }}
+                                {{ form_cliente.telefone }}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-light p-2 rounded mb-3">
+                            <h6 class="text-primary border-bottom pb-1"><i class="fas fa-map-marker-alt"></i> Endereço</h6>
+                            <div class="row">
+                                <div class="col-md-8 form-group">
+                                    {{ form_cliente.rua.label_tag }}
+                                    {{ form_cliente.rua }}
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    {{ form_cliente.numero.label_tag }}
+                                    {{ form_cliente.numero }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    {{ form_cliente.bairro.label_tag }}
+                                    {{ form_cliente.bairro }}
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    {{ form_cliente.cidade.label_tag }}
+                                    {{ form_cliente.cidade }}
+                                </div>
+                                <div class="col-md-12 form-group">
+                                    {{ form_cliente.ponto_referencia.label_tag }}
+                                    {{ form_cliente.ponto_referencia }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_cliente.observacoes_fixas.label_tag }}
+                            {{ form_cliente.observacoes_fixas }}
+                            <small class="text-muted">Ex: Cuidado com o cão, interfone estragado.</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-save mr-1"></i> Salvar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card card-dark shadow">
+                <div class="card-header border-transparent">
+                    <h3 class="card-title"><i class="fas fa-address-book mr-2"></i>Gestão de Clientes</h3>
+                    
+                    <div class="card-tools">
+                        <form method="get" action="{% url 'painel_operador' %}" class="input-group input-group-sm" style="width: 250px;">
+                            <input type="text" name="q" class="form-control float-right" placeholder="Buscar Nome ou CPF..." value="{{ query|default:'' }}">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                {% if query %}
+                                <a href="{% url 'painel_operador' %}" class="btn btn-default" title="Limpar Busca">
+                                    <i class="fas fa-times text-danger"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table m-0 table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Cliente / CPF-CNPJ</th>
+                                    <th>Localização / Contato</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in clientes %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-weight-bold">{{ c.nome }}</span>
+                                            <small class="badge badge-secondary" style="width: fit-content;">{{ c.documento }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-phone-alt text-success mr-1"></i> <small>{{ c.telefone }}</small><br>
+                                        <i class="fas fa-map-pin text-danger mr-1"></i> <small>{{ c.bairro }} - {{ c.rua }}, {{ c.numero }}</small>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="btn-group">
+                                            <a href="{% url 'criar_entrega_cliente' c.id %}" class="btn btn-success btn-sm" title="Lançar Entrega">
+                                                <i class="fas fa-truck-loading"></i> Lançar
+                                            </a>
+                                            <a href="{% url 'editar_cliente' c.id %}" class="btn btn-info btn-sm" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'excluir_cliente' c.id %}" class="btn btn-danger btn-sm" title="Excluir" onclick="return confirm('Deseja realmente excluir este cliente?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">
+                                        {% if query %}
+                                            Nenhum cliente encontrado para: "<strong>{{ query }}</strong>"
+                                        {% else %}
+                                            Nenhum cliente cadastrado.
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
