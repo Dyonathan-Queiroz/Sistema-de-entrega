@@ -55,7 +55,12 @@
                         <div class="form-group">
                             {{ form_cliente.observacoes_fixas.label_tag }}
                             {{ form_cliente.observacoes_fixas }}
-                            <small class="text-muted">Ex: Cuidado com o cão, interfone estragado.</small>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_cliente.filial.label_tag }}
+                            {{ form_cliente.filial }}
+                            <small class="text-muted">Selecione a filial que atende este cliente.</small>
                         </div>
                     </div>
                     <div class="card-footer">
@@ -76,13 +81,9 @@
                         <form method="get" action="{% url 'painel_operador' %}" class="input-group input-group-sm" style="width: 250px;">
                             <input type="text" name="q" class="form-control float-right" placeholder="Buscar Nome ou CPF..." value="{{ query|default:'' }}">
                             <div class="input-group-append">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i>
-                                </button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                                 {% if query %}
-                                <a href="{% url 'painel_operador' %}" class="btn btn-default" title="Limpar Busca">
-                                    <i class="fas fa-times text-danger"></i>
-                                </a>
+                                <a href="{% url 'painel_operador' %}" class="btn btn-default"><i class="fas fa-times text-danger"></i></a>
                                 {% endif %}
                             </div>
                         </form>
@@ -95,8 +96,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th>Cliente / CPF-CNPJ</th>
-                                    <th>Localização / Contato</th>
-                                    <th class="text-center">Ações</th>
+                                    <th>Localização / Filial</th> <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -109,32 +109,21 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <i class="fas fa-phone-alt text-success mr-1"></i> <small>{{ c.telefone }}</small><br>
-                                        <i class="fas fa-map-pin text-danger mr-1"></i> <small>{{ c.bairro }} - {{ c.rua }}, {{ c.numero }}</small>
+                                        <i class="fas fa-map-pin text-danger mr-1"></i> <small>{{ c.bairro }} - {{ c.rua }}, {{ c.numero }}</small><br>
+                                        <i class="fas fa-store text-primary mr-1"></i> 
+                                        <small class="text-bold">{% if c.filial %}{{ c.filial.nome }}{% else %}Sem Filial{% endif %}</small>
                                     </td>
                                     <td class="text-center align-middle">
                                         <div class="btn-group">
-                                            <a href="{% url 'criar_entrega_cliente' c.id %}" class="btn btn-success btn-sm" title="Lançar Entrega">
-                                                <i class="fas fa-truck-loading"></i> Lançar
-                                            </a>
-                                            <a href="{% url 'editar_cliente' c.id %}" class="btn btn-info btn-sm" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{% url 'excluir_cliente' c.id %}" class="btn btn-danger btn-sm" title="Excluir" onclick="return confirm('Deseja realmente excluir este cliente?')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                            <a href="{% url 'criar_entrega_cliente' c.id %}" class="btn btn-success btn-sm"><i class="fas fa-truck-loading"></i> Lançar</a>
+                                            <a href="{% url 'editar_cliente' c.id %}" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
+                                            <a href="{% url 'excluir_cliente' c.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Excluir cliente?')"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted">
-                                        {% if query %}
-                                            Nenhum cliente encontrado para: "<strong>{{ query }}</strong>"
-                                        {% else %}
-                                            Nenhum cliente cadastrado.
-                                        {% endif %}
-                                    </td>
+                                    <td colspan="3" class="text-center py-4 text-muted">Nenhum cliente cadastrado.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

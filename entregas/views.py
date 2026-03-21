@@ -273,33 +273,31 @@ def criar_entrega_cliente(request, cliente_id):
             try:
                 entrega = form.save(commit=False)
                 
-                # Preenchimento automático
+                # Preenchimento automático baseado no cadastro do cliente
                 entrega.cliente = cliente
                 entrega.operador = request.user
                 entrega.status = 'pendente'
                 entrega.valor = 0
                 
-                # RESOLUÇÃO DO ERRO DO ATRIBUTO:
-                # Primeiro, tentamos pegar a primeira filial do banco para não dar erro
-                from .models import Filial
-                filial_padrao = Filial.objects.first()
-                
-                if filial_padrao:
-                    entrega.filial_origem = filial_padrao
+                # Lógica de Filial: Prioriza a do cliente, se não tiver, pega a primeira do banco
+                if cliente.filial:
+                    entrega.filial_origem = cliente.filial
                 else:
-                    # Se nem a filial padrão existir, avisamos o erro
-                    messages.error(request, "Erro: Nenhuma filial cadastrada no sistema.")
-                    return render(request, 'entregas/lancar_entrega.html', {'form': form, 'cliente': cliente})
+                    from .models import Filial
+                    entrega.filial_origem = Filial.objects.first()
                 
-                entrega.save() # Agora vai!
+                entrega.save()
                 
-                messages.success(request, f"Entrega para {cliente.nome} postada!")
+                messages.success(request, f"Entrega para {cliente.nome} postada com sucesso!")
                 return redirect('painel_operador')
                 
             except Exception as e:
-                print(f"ERRO AO SALVAR NO BANCO: {e}")
-                messages.error(request, f"Erro técnico ao salvar: {e}")
+                print(f"ERRO AO SALVAR: {e}")
+                messages.error(request, f"Erro técnico: {e}")
+        else:
+            print(form.errors)
     else:
+        # Preenche com os dados atuais do cliente
         dados_iniciais = {
             'rua': cliente.rua,
             'numero': cliente.numero,
@@ -309,7 +307,4 @@ def criar_entrega_cliente(request, cliente_id):
         }
         form = LancarEntregaForm(initial=dados_iniciais)
 
-    return render(request, 'entregas/lancar_entrega.html', {
-        'form': form,
-        'cliente': cliente
-    })
+    return render(request, 'entregas/lancar_entrega.html', {'form': form, 'cliente': cliente})

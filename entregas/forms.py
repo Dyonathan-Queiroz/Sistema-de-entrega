@@ -68,8 +68,9 @@ class UsuarioForm(forms.ModelForm):
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nome', 'documento', 'telefone', 'rua', 'numero', 'bairro', 'cidade', 'ponto_referencia', 'observacoes_fixas']
+        fields = ['nome', 'documento', 'telefone', 'rua', 'numero', 'bairro', 'cidade', 'ponto_referencia', 'observacoes_fixas', 'filial']
         widgets = {
+            'filial': forms.Select(attrs={'class': 'form-control select2'}),
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
             'documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apenas números'}),
             'telefone': forms.TextInput(attrs={'class': 'form-control'}),

@@ -89,6 +89,8 @@ class Cliente(models.Model):
         verbose_name_plural = "Clientes"
         ordering = ['nome']
 
+    filial = models.ForeignKey('Filial', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Filial Padrão")
+
     def __str__(self):
         return f"{self.nome} - {self.bairro}"
 
