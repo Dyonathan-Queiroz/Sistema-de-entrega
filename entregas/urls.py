@@ -30,4 +30,12 @@ urlpatterns = [
     path('equipe/', views.gerenciar_equipe, name='gerenciar_equipe'),
     path('equipe/editar/<int:pk>/', views.editar_equipe, name='editar_equipe'),
     path('equipe/excluir/<int:pk>/', views.excluir_equipe, name='excluir_equipe'),
+
+    # --- ENTREGADORES
+    path('painel/entregador/', views.painel_entregador, name='painel_entregador'),
+    path('aceitar-entrega/<int:entrega_id>/', views.aceitar_entrega, name='aceitar_entrega'),
+    path('finalizar-entrega/<int:entrega_id>/', views.finalizar_entrega, name='finalizar_entrega'),
+    path('entrega/detalhes/<int:entrega_id>/', views.detalhes_entrega, name='detalhes_entrega'),
+    path('entrega/reportar/<int:entrega_id>/', views.reportar_pendencia, name='reportar_pendencia'),
+    path('entrega/reliberar/<int:entrega_id>/', views.reliberar_entrega, name='reliberar_entrega'),
 ]

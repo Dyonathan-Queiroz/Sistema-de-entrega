@@ -1,0 +1,59 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3 px-3">
+    
+    {% if entregas_em_rota %}
+    <h6 class="text-uppercase text-success font-weight-bold mb-3"><i class="fas fa-route"></i> Entrega em Andamento</h6>
+    {% for entrega in entregas_em_rota %}
+    <div class="card shadow-sm border-left-success mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title text-primary font-weight-bold mb-1">{{ entrega.cliente.nome }}</h5>
+                    <p class="text-muted small mb-0"><i class="fas fa-map-marker-alt"></i> {{ entrega.rua }}, {{ entrega.numero }}</p>
+                </div>
+                <span class="badge badge-success px-2 py-1">Em rota</span>
+            </div>
+            <a href="{% url 'detalhes_entrega' entrega.id %}" class="btn btn-primary btn-block mt-3 font-weight-bold">
+                <i class="fas fa-info-circle"></i> DETALHES
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <h6 class="text-uppercase text-secondary font-weight-bold mt-4 mb-3"><i class="fas fa-list-ul"></i> Disponíveis no Ponto</h6>
+    
+    <div class="row">
+        {% for entrega in entregas_pendentes %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge badge-pill badge-info px-3">{{ entrega.filial_origem.nome }}</span>
+                    </div>
+                    <h6 class="font-weight-bold mb-1">{{ entrega.cliente.nome }}</h6>
+                    <p class="text-muted small mb-3">{{ entrega.bairro }}</p>
+                    
+                    <form action="{% url 'aceitar_entrega' entrega.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-block font-weight-bold">
+                            ACEITAR ENTREGA
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center mt-4">
+            <div class="p-4 bg-light rounded shadow-sm">
+                <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                <h6>Tudo limpo por aqui!</h6>
+                <p class="text-muted small">Não há novas entregas no momento.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -3,49 +3,106 @@
 {% block title %}Dashboard Gestor{% endblock %}
 
 {% block content_header %}
-  <h1 class="m-0">Resumo Operacional</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="m-0 text-dark">Resumo Operacional</h1>
+</div>
 {% endblock %}
 
 {% block content %}
+
 <div class="row">
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-info">
-      <div class="inner">
-        <h3>{{ total_entregas }}</h3>
-        <p>Total de Entregas</p>
-      </div>
-      <div class="icon"><i class="fas fa-box"></i></div>
+    <div class="col-lg col-md-4 col-sm-6">
+        <div class="small-box bg-warning text-white shadow-sm">
+            <div class="inner">
+                <h3>{{ entregas_em_rota }}</h3>
+                <p>Entregas em Rota</p>
+            </div>
+            <div class="icon"><i class="fas fa-motorcycle"></i></div>
+        </div>
     </div>
-  </div>
-
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-danger">
-      <div class="inner">
-        <h3>{{ entregas_pendentes }}</h3>
-        <p>Pendentes / Atrasadas</p>
-      </div>
-      <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+    
+    <div class="col-lg col-md-4 col-sm-6">
+        <div class="small-box bg-success text-white shadow-sm">
+            <div class="inner">
+                <h3>{{ entregas_finalizadas }}</h3>
+                <p>Entregas Finalizadas</p>
+            </div>
+            <div class="icon"><i class="fas fa-check-circle"></i></div>
+        </div>
     </div>
-  </div>
-
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-success">
-      <div class="inner">
-        <h3>{{ veiculos_disponiveis }}</h3>
-        <p>Veículos Disponíveis</p>
-      </div>
-      <div class="icon"><i class="fas fa-truck"></i></div>
+    
+    <div class="col-lg col-md-4 col-sm-6">
+        <div class="small-box bg-secondary text-white shadow-sm">
+            <div class="inner">
+                <h3>{{ total_entregas }}</h3>
+                <p>Total Geral</p>
+            </div>
+            <div class="icon"><i class="fas fa-box"></i></div>
+        </div>
     </div>
-  </div>
-
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-warning">
-      <div class="inner">
-        <h3>{{ total_clientes }}</h3>
-        <p>Clientes Cadastrados</p>
-      </div>
-      <div class="icon"><i class="fas fa-users"></i></div>
+    
+    <div class="col-lg col-md-4 col-sm-6">
+        <div class="small-box bg-primary text-white shadow-sm">
+            <div class="inner">
+                <h3>{{ total_clientes }}</h3>
+                <p>Clientes Cadastrados</p>
+            </div>
+            <div class="icon"><i class="fas fa-users"></i></div>
+        </div>
     </div>
-  </div>
+    
+    <div class="col-lg col-md-4 col-sm-6">
+        <div class="small-box bg-light border shadow-sm">
+            <div class="inner">
+                <h3>{{ veiculos_disponiveis }}</h3>
+                <p>Veículos Disponíveis</p>
+            </div>
+            <div class="icon"><i class="fas fa-truck text-muted"></i></div>
+        </div>
+    </div>
 </div>
+
+{% if entregas_reportadas %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-outline card-danger shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Atenção:</strong> Entregas com problemas reportados
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Entregador</th>
+                            <th>Motivo do Problema</th>
+                            <th class="text-center">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entrega in entregas_reportadas %}
+                        <tr>
+                            <td class="align-middle font-weight-bold">{{ entrega.cliente.nome }}</td>
+                            <td class="align-middle">{{ entrega.entregador.username|default:"N/A" }}</td>
+                            <td class="align-middle text-muted"><em>{{ entrega.observacao_entrega }}</em></td>
+                            <td class="text-center align-middle">
+                                <form action="{% url 'reliberar_entrega' entrega.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-undo"></i> Re-liberar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

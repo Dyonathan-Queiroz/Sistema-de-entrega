@@ -5,6 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .models import Entrega, Veiculo, Filial, Usuario, Cliente
 from .forms import VeiculoForm, FilialForm, UsuarioForm, ClienteForm, LancarEntregaForm
+from django.utils import timezone
+from django.db.models import Q
+
 
 # --- 1. AUTENTICAÇÃO E LOGIN ---
 
@@ -34,40 +37,47 @@ def logout_view(request):
 def dashboard(request):
     user = request.user
     
-    # REDIRECIONAMENTO AUTOMÁTICO POR PERFIL
-    # Se for operador, mandamos direto para a função que você testou e funcionou
+    # 1. REDIRECIONAMENTOS DIRETOS
     if user.perfil == 'operador':
         return redirect('painel_operador')
     
-    # Se for entregador, mandamos para a view dele (se você tiver uma específica)
-    # Caso contrário, ele segue para o render abaixo
     if user.perfil == 'entregador':
-        # return redirect('painel_entregador') # Se existir essa rota
-        pass
+        return redirect('painel_entregador')
 
-    # Lógica para GESTOR (ou caso o redirecionamento falhe)
-    clientes = Cliente.objects.all().order_by('-id')
-    
+    # 2. LÓGICA DE DADOS PARA GESTOR
+    # Primeiro, calculamos as entregas reportadas
+    entregas_reportadas = Entrega.objects.filter(
+        status='pendente'
+    ).exclude(observacao_entrega__isnull=True).exclude(observacao_entrega='')
+
     context = {
         'perfil': user.perfil,
         'nome_usuario': user.get_full_name() or user.username,
+        # Estatísticas gerais
         'total_entregas': Entrega.objects.count(),
-        'entregas_pendentes': Entrega.objects.filter(status='pendente').count(),
-        'veiculos_disponiveis': Veiculo.objects.filter(status='disponivel').count(),
         'total_clientes': Cliente.objects.count(),
+        'veiculos_disponiveis': Veiculo.objects.filter(status='disponivel').count(),
+        
+        # Monitoramento em tempo real
+        'entregas_pendentes': Entrega.objects.filter(status='pendente').count(),
+        'entregas_em_rota': Entrega.objects.filter(status='em_rota').count(),
+        'entregas_finalizadas': Entrega.objects.filter(status='entregue').count(),
+        
+        # Adicionamos a lista de reportadas ao contexto para poder usar no template
+        'entregas_reportadas': entregas_reportadas,
+        
+        # Dados para listagem
+        'clientes': Cliente.objects.all().order_by('-id'),
         'form_cliente': ClienteForm(),
-        'clientes': clientes,
     }
 
+    # Se for gestor, renderiza o painel dele com o contexto completo
     if user.perfil == 'gestor':
         return render(request, 'entregas/dashboard_gestor.html', context)
     
-    elif user.perfil == 'entregador':
-        context['minhas_entregas'] = Entrega.objects.filter(entregador=user, status='em_rota')
-        return render(request, 'entregas/dashboard_entregador.html', context)
-    
-    # Fallback: Se algo der errado, mostra o painel do operador
+    # Fallback de segurança
     return redirect('painel_operador')
+
 
 # --- 3. PAINEL DO OPERADOR E CLIENTES (CRUD) ---
 
@@ -276,7 +286,7 @@ def criar_entrega_cliente(request, cliente_id):
                 # Preenchimento automático baseado no cadastro do cliente
                 entrega.cliente = cliente
                 entrega.operador = request.user
-                entrega.status = 'pendente'
+                entrega.status = ''
                 entrega.valor = 0
                 
                 # Lógica de Filial: Prioriza a do cliente, se não tiver, pega a primeira do banco
@@ -308,3 +318,89 @@ def criar_entrega_cliente(request, cliente_id):
         form = LancarEntregaForm(initial=dados_iniciais)
 
     return render(request, 'entregas/lancar_entrega.html', {'form': form, 'cliente': cliente})
+
+# -- referente a entregador ---
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def painel_entregador(request):
+    # 1. Busca entregas em rota para o entregador logado
+    entregas_em_rota = Entrega.objects.filter(entregador=request.user, status='em_rota')
+    
+    # 2. Busca entregas pendentes (que não possuem observação/problema)
+    # Usamos Q para garantir: (observacao é nula OU está vazia)
+    entregas_pendentes = Entrega.objects.filter(status='pendente').filter(
+        Q(observacao_entrega__isnull=True) | Q(observacao_entrega='')
+    )
+    
+    # 3. Retorno apenas com as listas de entregas
+    return render(request, 'entregas/painel_entregador.html', {
+        'entregas_em_rota': entregas_em_rota,
+        'entregas_pendentes': entregas_pendentes,
+    })
+    
+# --- FUNÇÕES PARA O ENTREGADOR ---
+
+@login_required
+def aceitar_entrega(request, entrega_id):
+    entrega = get_object_or_404(Entrega, pk=entrega_id)
+    if entrega.status == 'pendente':
+        entrega.entregador = request.user
+        entrega.status = 'em_rota'
+        entrega.data_saida = timezone.now()
+        entrega.save()
+        messages.success(request, "Boa! Entrega aceita.")
+    return redirect('painel_entregador')
+
+@login_required
+def finalizar_entrega(request, entrega_id):
+    entrega = get_object_or_404(Entrega, pk=entrega_id, entregador=request.user)
+    if entrega.status == 'em_rota':
+        entrega.status = 'entregue'
+        entrega.data_finalizacao = timezone.now() # Certifique-se de ter esse campo no models
+        entrega.save()
+        messages.success(request, "Entrega finalizada com sucesso!")
+    return redirect('painel_entregador')
+
+@login_required
+def detalhes_entrega(request, entrega_id):
+    entrega = get_object_or_404(Entrega, pk=entrega_id)
+    
+    # Monta o endereço para o Google Maps
+    endereco_completo = f"{entrega.rua}, {entrega.numero}, {entrega.bairro}, Boa Vista"
+    import urllib.parse
+    google_maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(endereco_completo)}"
+    
+    return render(request, 'entregas/detalhes_entrega.html', {
+        'entrega': entrega,
+        'google_maps_url': google_maps_url
+    })
+
+
+
+
+@login_required
+def reportar_pendencia(request, entrega_id):
+    entrega = get_object_or_404(Entrega, pk=entrega_id)
+    if request.method == 'POST':
+        observacao = request.POST.get('observacao')
+        entrega.status = 'pendente'  # Volta para a fila
+        entrega.entregador = None    # Libera a entrega
+        entrega.observacao_entrega = f"Problema: {observacao}" # Registra o erro
+        entrega.save()
+        messages.warning(request, "Entrega reportada como pendente.")
+        return redirect('painel_entregador')
+    return redirect('detalhes_entrega', entrega_id=entrega_id)
+
+@login_required
+def reliberar_entrega(request, entrega_id):
+    entrega = get_object_or_404(Entrega, pk=entrega_id)
+    # Limpa os dados do problema para a entrega ficar "nova" na fila
+    entrega.entregador = None
+    entrega.observacao_entrega = None 
+    entrega.status = 'pendente'
+    entrega.save()
+    messages.success(request, "Entrega re-liberada para a fila!")
+    return redirect('dashboard')

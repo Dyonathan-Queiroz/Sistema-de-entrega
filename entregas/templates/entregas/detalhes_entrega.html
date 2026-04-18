@@ -1,0 +1,66 @@
+{% extends 'entregas/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <a href="{% url 'painel_entregador' %}" class="btn btn-sm btn-outline-light">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    <h5 class="mb-0 font-weight-bold">Entrega #{{ entrega.id }}</h5>
+                    <div style="width: 40px;"></div>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <small class="text-muted text-uppercase">Cliente</small>
+                            <h5 class="font-weight-bold text-dark">{{ entrega.cliente.nome }}</h5>
+                        </div>
+                        <span class="badge badge-warning px-3 py-2 text-uppercase">{{ entrega.status }}</span>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-4">
+                        <small class="text-muted text-uppercase">Endereço</small>
+                        <p class="font-weight-bold text-dark" style="font-size: 1.1rem;">
+                            <i class="fas fa-map-marker-alt text-danger mr-1"></i> {{ entrega.rua }}, {{ entrega.numero }} - {{ entrega.bairro }}
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-4">
+                        <a href="{{ google_maps_url }}" target="_blank" class="btn btn-lg btn-info btn-block shadow-sm mb-2">
+                            <i class="fas fa-map-marked-alt"></i> ABRIR NO MAPAS
+                        </a>
+                        <a href="https://wa.me/55{{ entrega.cliente.telefone|slugify }}" target="_blank" class="btn btn-lg btn-success btn-block shadow-sm mb-2">
+                            <i class="fab fa-whatsapp"></i> FALAR COM CLIENTE
+                        </a>
+                        <form action="{% url 'finalizar_entrega' entrega.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-lg btn-primary btn-block shadow-sm">
+                                <i class="fas fa-check-circle"></i> FINALIZAR ENTREGA
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-light shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-secondary mb-3"><i class="fas fa-exclamation-triangle"></i> Problemas com a entrega?</h6>
+                    <form action="{% url 'reportar_pendencia' entrega.id %}" method="post">
+                        {% csrf_token %}
+                        <textarea name="observacao" class="form-control mb-2" rows="2" placeholder="Descreva o motivo..."></textarea>
+                        <button type="submit" class="btn btn-outline-danger btn-sm btn-block">DEIXAR COMO PENDENTE</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
